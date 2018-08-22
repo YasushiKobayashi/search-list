@@ -4,6 +4,7 @@ jobs:
     working_directory: /go/src/github.com/YasushiKobayashi/search-list
     docker:
       - image: golang:1.10-alpine3.7
+          CIRCLE_TEST_ARTIFACTS: /tmp/artifacts
 
     steps:
       - checkout
