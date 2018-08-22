@@ -6,6 +6,7 @@ import (
 
 type (
 	ScrapeRepository interface {
-		Run([]model.Keyword) (model.SearchLists, error)
+		GetSearchList([]model.Keyword) (model.SearchLists, error)
+		GetPageInfoScrage(*model.CompanyInfo) error
 	}
 )

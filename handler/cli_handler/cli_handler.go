@@ -1,9 +1,12 @@
 package cli_handler
 
 import (
+	"strconv"
+
 	"github.com/YasushiKobayashi/search-list/infrastructure/csv_repository"
-	"github.com/YasushiKobayashi/search-list/infrastructure/scrape"
+	"github.com/YasushiKobayashi/search-list/infrastructure/scrape_repository"
 	"github.com/YasushiKobayashi/search-list/usecase"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -19,39 +22,80 @@ func NewCsvWriterHandler(path string) *CsvWriterHandler {
 			CsvRepository: &csv_repository.CsvRepository{
 				Path: path,
 			},
-			ScrapeRepository: &scrape.Scrape{},
+			ScrapeRepository: &scrape_repository.Scrape{},
 		},
 	}
 }
 
 var Commands = []cli.Command{
-	commandGetSearchList,
+	getSearchList,
+	getPageInfo,
 }
-var commandGetSearchList = cli.Command{
+var getSearchList = cli.Command{
 	Name:    "get",
 	Aliases: []string{"g"},
 	Usage:   "...",
 	Description: `
-upload dump file to S3
+Get google top list.
 `,
-	Action: GetSearchList,
+	Action: getSearchListHandler,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "file, f",
 			Value: "sample.csv",
 			Usage: "csv file path",
 		},
-		// cli.StringFlag{
-		// 	Name:  "parallel, p",
-		// 	Value: "palallel number goroutine",
-		// 	Usage: "",
-		// },
+		cli.StringFlag{
+			Name:  "parallel, p",
+			Value: "1",
+			Usage: "palallel number goroutine",
+		},
 	},
 }
 
-func GetSearchList(c *cli.Context) error {
-	path := c.String("file")
-	handler := NewCsvWriterHandler(path)
-	handler.Interactor.Run()
-	return nil
+func getSearchListHandler(c *cli.Context) {
+	filePath := c.String("file")
+	handler := NewCsvWriterHandler(filePath)
+	err := handler.Interactor.GetSearchList()
+	if err != nil {
+		panic(err)
+	}
+}
+
+var getPageInfo = cli.Command{
+	Name:    "page",
+	Aliases: []string{"p"},
+	Usage:   "...",
+	Description: `
+Get scraped pape company tel and email.
+`,
+	Action: getPageInfoHandler,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "file, f",
+			Value: "sample.csv",
+			Usage: "csv file path",
+		},
+		cli.StringFlag{
+			Name:  "parallel, p",
+			Value: "1",
+			Usage: "palallel number goroutine",
+		},
+	},
+}
+
+func getPageInfoHandler(c *cli.Context) {
+	filPath := c.String("file")
+	parallel := c.String("parallel")
+	parallelNumber, err := strconv.Atoi(parallel)
+	if err != nil {
+		err = errors.Wrap(err, "parallel must number.")
+		panic(err)
+	}
+
+	handler := NewCsvWriterHandler(filPath)
+	err = handler.Interactor.GetPageInfo(parallelNumber)
+	if err != nil {
+		panic(err)
+	}
 }
