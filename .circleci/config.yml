@@ -1,0 +1,21 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/YasushiKobayashi/search-list
+    docker:
+      - image: golang:1.10-alpine3.7
+
+    steps:
+      - checkout
+      - run: mkdir -p $CIRCLE_TEST_ARTIFACTS
+      - run: apk --no-cache add git
+      - run: go get -u github.com/golang/dep/cmd/dep
+      - run: dep ensure
+      - run: go build search-list.go
+      - run: go vet ./...
+      - run: go test -v -p 1 -cover -coverprofile=cover.out ./...
+      - run: go tool cover -html=cover.out -o cover.html
+      - run: cp cover.html $CIRCLE_TEST_ARTIFACTS
+      - store_artifacts:
+          path: /tmp/artifacts
+
