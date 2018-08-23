@@ -1,71 +1,21 @@
 package scrape_repository
 
 import (
-	"fmt"
-	"log"
-	"sync"
-	"time"
-
 	"github.com/PuerkitoBio/goquery"
-	"github.com/YasushiKobayashi/search-list/model"
+	"github.com/YasushiKobayashi/search-list/utils"
 	"github.com/pkg/errors"
 )
 
-type (
-	Scrape struct{}
-)
-
-func (s *Scrape) GetSearchList(k []model.Keyword) (model.SearchLists, error) {
-	ch := make(chan bool, 1)
-	var err error
-	var wg sync.WaitGroup
-	var searchLists model.SearchLists
-	for _, v := range k {
-		wg.Add(1)
-		ch <- true
-		fmt.Println(v)
-		go func(url string) {
-			defer func() { <-ch }()
-			var searchList *model.SearchList = &model.SearchList{}
-			err = getSearchListScrape(searchList, url)
-			if err != nil {
-				err = errors.Wrap(err, "RunScraipe error")
-				log.Println(err)
-			}
-
-			searchLists = append(searchLists, searchList)
-			time.Sleep(1 * time.Second)
-			wg.Done()
-		}(v.GetUrl())
-	}
-
-	wg.Wait()
-
-	return searchLists, nil
-}
-
-func getSearchListScrape(s *model.SearchList, url string) error {
-	doc, err := goquery.NewDocument(url)
+func newDocument(urlStr string) (res *goquery.Document, err error) {
+	req, err := utils.RequestGet(urlStr)
 	if err != nil {
-		return errors.Wrap(err, "goquery.NewDocument error")
+		return res, errors.Wrap(err, "RequestGet error")
 	}
 
-	err = s.GetListing(doc)
+	document, err := goquery.NewDocumentFromReader(req.Body)
 	if err != nil {
-		return errors.Wrap(err, "getListing error")
+		return res, errors.Wrap(err, "NewDocumentFromReader error")
 	}
 
-	s.GetSearch(doc)
-	return nil
-}
-
-func (s *Scrape) GetPageInfoScrage(c *model.CompanyInfo) error {
-	doc, err := goquery.NewDocument(c.URL)
-	if err != nil {
-		return errors.Wrap(err, "goquery.NewDocument error")
-	}
-
-	c.GetEmail(doc)
-	c.GetTel(doc)
-	return nil
+	return document, nil
 }

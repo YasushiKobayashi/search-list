@@ -34,7 +34,7 @@ func ParseGoogleUrl(urlStr string) (string, error) {
 		return "", errors.Wrap(err, "url.Parse error")
 	}
 	q := u.Query()
-	if q != nil {
+	if q != nil && q["q"] != nil {
 		return q["q"][0], nil
 	}
 	return "", fmt.Errorf("invalid url : %s", urlStr)
